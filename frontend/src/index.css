@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body { @apply bg-fog text-ink font-sans; }
+:focus-visible { outline: 2px solid #0B7A75; outline-offset: 2px; }
+.leaflet-container { font-family: inherit; }

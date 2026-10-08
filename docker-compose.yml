@@ -1,0 +1,30 @@
+services:
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    ports: ["8002:8002"]
+    volumes: ["./data/valhalla:/custom_files"]
+    environment:
+      tile_urls: ${VALHALLA_PBF_URL:?Run "python scripts/setup_region.py" first to choose your map region}
+      build_elevation: "True"       # downloads SRTM elevation for the region (enables climb and hill scoring)
+      use_tiles_ignore_pbf: "True"
+      serve_tiles: "True"
+      server_threads: "4"
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      VALHALLA_URL: http://valhalla:8002
+      OLLAMA_URL: ${OLLAMA_URL_DOCKER:-http://host.docker.internal:11434}   # Ollama runs on the host (easier GPU access)
+      CORS_ORIGINS: http://localhost:8080
+      REGION_FILE: /data/region.json
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes: ["./data:/data:ro"]
+    depends_on: [valhalla]
+    ports: ["8000:8000"]
+
+  frontend:
+    build: ./frontend
+    ports: ["8080:80"]
+    depends_on: [backend]

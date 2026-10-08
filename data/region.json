@@ -1,0 +1,10 @@
+{
+  "name": "Central Zone",
+  "pbf_url": "https://download.geofabrik.de/asia/india/central-zone-latest.osm.pbf",
+  "bbox": [
+    74.01489,
+    17.77092,
+    84.64657,
+    31.49075
+  ]
+}
