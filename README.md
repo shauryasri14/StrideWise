@@ -8,8 +8,6 @@ A small language model running on your own machine turns that sentence into stru
 
 Built for the Hacktoberfest "Touch Grass" challenge: open-source AI that gets people off the screen.
 
-<!-- Add a screenshot here: ![StrideWise screenshot](docs/screenshot.png) -->
-
 ---
 
 ## How it works
