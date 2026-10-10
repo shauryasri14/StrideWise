@@ -169,7 +169,9 @@ def main() -> None:
         subprocess.run(["docker", "compose", "up", "-d", "valhalla"], cwd=ROOT, check=True)
         print("Valhalla started. Follow progress: docker compose logs -f valhalla")
     else:
-        print("Next: docker compose up valhalla")
+        print("Next, pick one:")
+        print("  Development:  docker compose up valhalla   (then run the backend and frontend yourself)")
+        print("  Everything:   docker compose up --build    (backend and frontend in Docker too)")
 
 
 if __name__ == "__main__":

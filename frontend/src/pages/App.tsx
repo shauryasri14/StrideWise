@@ -37,7 +37,7 @@ export default function App() {
 
         <label className="text-sm font-medium" htmlFor="prompt">What kind of route do you want?</label>
         <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3}
-          placeholder="5 km shaded run, low traffic, avoid polluted roads"
+          placeholder='Include a distance, e.g. "5 km shaded run, low traffic, finishing near a park"'
           className="w-full resize-none rounded-md border border-mist bg-white p-3 text-sm" />
         <div className="flex flex-wrap gap-2">
           {EXAMPLES.map((x) => <button key={x} onClick={() => setPrompt(x)} className="rounded-full border border-mist px-3 py-1 text-xs hover:bg-white">{x}</button>)}
