@@ -9,7 +9,13 @@ services:
       use_tiles_ignore_pbf: "True"
       serve_tiles: "True"
       server_threads: "4"
-    restart: unless-stopped
+    healthcheck:   # informational: `docker compose ps` shows "starting" while tiles build, then "healthy" when routing is ready
+      test: ["CMD-SHELL", "curl -sf http://localhost:8002/status > /dev/null || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 45m   # the first start builds the routing tiles; failures during this time are not counted
+    restart: on-failure:3   # a crash loop would otherwise re-download the map forever and can get you rate-limited
 
   backend:
     build: ./backend

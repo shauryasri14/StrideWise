@@ -42,7 +42,7 @@ class ValhallaRouter:
         try:
             r = await self._client.post(f"{self.base_url}/route", json=body)
         except httpx.HTTPError as e:
-            raise AppError(503, "routing_unavailable", f"Valhalla is not reachable at {self.base_url}.") from e
+            raise AppError(503, "routing_unavailable", f"The routing engine (Valhalla) is not reachable at {self.base_url}. If you just started it, it may still be building map tiles, which takes 10 to 30 minutes for a large region. Check progress with: docker compose logs -f valhalla") from e
         if r.status_code == 400:
             raise AppError(422, "no_route", "No route found. The start point may be outside the loaded map area.")
         if r.status_code >= 500:

@@ -58,7 +58,12 @@ python3 scripts/setup_region.py
 (On Windows use `python`. Run it as a single line and do not paste a `#` comment after it.)
 
 It asks where you will use the app (a place name or `lat,lon`), finds the smallest Geofabrik extract that contains it, writes `VALHALLA_PBF_URL` into `.env`, and saves the region's bounding box to `data/region.json`.
-Other ways to run it: `--lat 28.5 --lon 77.4`, `--place "Lisbon"` (the place name is sent to Nominatim), or `--pbf-url <extract URL>`. Run it again to switch regions. It asks before deleting old routing tiles.
+**It then downloads the map itself** into `data/valhalla/` and checks it before Docker ever sees it: the download resumes if interrupted, retries when the server is busy, and the file must be a real OpenStreetMap file of the right size (and match Geofabrik's checksum). A large region is a few hundred MB, so this can take a few minutes.
+Other ways to run it: `--lat 28.5 --lon 77.4`, `--place "Lisbon"` (the place name is sent to Nominatim), `--pbf-url <extract URL>`, `--download-only` (re-download or re-check the map already chosen in `.env`), or `--no-download` (configuration only). Run it again to switch regions. It asks before deleting old routing tiles.
+
+Keep the project in a normal folder (for example `C:\dev\StrideWise`), not inside OneDrive, which can lock large files while Docker reads them.
+
+**Choose one way to run the app.** Either follow steps 3 to 5 (you start each part yourself, best for development), or use the single command under "Everything in Docker instead" below. Do not do both at once: they use the same ports.
 
 **3. Start the routing engine**
 
@@ -75,8 +80,10 @@ cp .env.example .env     # skip if setup_region.py already created it
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --env-file ../.env
 ```
+
+`--env-file ../.env` makes the backend read your `.env`. Without it, only real environment variables are used and edits to `.env` have no effect.
 
 Check `http://localhost:8000/api/health`. You want `"valhalla": true` and `"ollama": true`.
 
@@ -90,7 +97,7 @@ npm run dev
 
 Open http://localhost:5173, click the map inside your loaded region (or press "Use my location"), describe your route including a distance, and press **Build route**.
 
-**Everything in Docker instead:** run `python scripts/setup_region.py`, then `docker compose up --build` and open http://localhost:8080. Ollama stays on the host.
+**Everything in Docker instead:** run `python3 scripts/setup_region.py`, then `docker compose up --build` and open http://localhost:8080. Ollama stays on the host.
 
 ## Example prompts
 
@@ -164,9 +171,12 @@ Do not edit `VALHALLA_PBF_URL` by hand. `scripts/setup_region.py` manages it.
 | "Local LLM unavailable (llm_unavailable); used the built-in keyword parser" | Ollama is not reachable | Start Ollama, run `ollama pull qwen2.5:3b`, check `/api/health` shows `"ollama": true`. Docker backend: set `OLLAMA_URL=http://host.docker.internal:11434` |
 | "No route found ... outside the loaded map area" or `outside_region` | Your start point is outside the map Valhalla loaded | Click inside your region, or run `setup_region.py` for your area |
 | `curl localhost:8002/status` returns an empty reply | Valhalla is still downloading or building | `docker compose logs -f valhalla` and wait |
-| `unable to read blob from file` in Valhalla logs | Corrupt or partial map download | `docker compose down`, delete `data/valhalla`, download the `.osm.pbf` with `curl -L -C -`, start again |
+| The app shows "The routing engine (Valhalla) is not reachable" (HTTP 503, `routing_unavailable`) | Valhalla is not running, is still building tiles, or crashed | `docker compose ps` (the `valhalla` container shows `healthy` when ready), `docker compose logs -f valhalla`, and wait until `curl localhost:8002/status` returns JSON |
+| `setup_region.py` prints "The automatic download did not work" | The server refused or interrupted the download (rate limit, network block) | Follow the manual steps it prints: download the file in your browser, save it with the exact name shown, then run `python3 scripts/setup_region.py --download-only` |
+| `unable to read blob from file` in Valhalla logs, or the container keeps restarting | The map file is not a real map (an error page or a partial download) | `docker compose down`, then `python3 scripts/setup_region.py --download-only`. It replaces a bad file and verifies the new one. Then start again |
+| The setup script says the download failed | Geofabrik is rate-limiting you, or your network (VPN, proxy, college or office network) blocks it | The script prints the manual steps: download the file in your browser, save it under the name shown in `data/valhalla/`, then run `--download-only` to check it |
 | "OpenStreetMap road data could not be loaded (...)" | Overpass servers are busy or unreachable. The reason is in the brackets | Wait a minute and retry. Until it is fixed, traffic, shade and surface are not used in ranking |
-| `CERTIFICATE_VERIFY_FAILED` in `setup_region.py` (macOS) | Python has no trusted certificates | `open "/Applications/Python 3.12/Install Certificates.command"` (use your version's folder), or `pip3 install certifi` |
+| `CERTIFICATE_VERIFY_FAILED` in `setup_region.py` (macOS) | Python has no trusted certificates | `open "/Applications/Python 3.12/Install Certificates.command"` (use your version's folder), or `pip3 install certifi` (the script uses it automatically) |
 | `UnicodeDecodeError` in `setup_region.py` (Windows) | An older script version read files with the wrong encoding | Use the latest script (it reads UTF-8) |
 
 ## API
