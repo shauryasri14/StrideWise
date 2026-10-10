@@ -207,6 +207,3 @@ Each service is behind its own module. Routing sits behind `ValhallaRouter`, so 
 
 Map data © OpenStreetMap contributors.
 
-## License
-
-Add your license here (for example MIT) and a `LICENSE` file.
